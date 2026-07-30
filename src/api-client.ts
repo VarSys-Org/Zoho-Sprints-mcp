@@ -302,6 +302,29 @@ export class ZohoSprintsClient {
         return (await res.json()) as ApiResponse;
     }
 
+    async postMultipart (
+        path: string,
+        data: Record<string, string>
+    ): Promise<ApiResponse> {
+        const url = `${this.baseUrl}${path}`;
+        const formData = new FormData();
+        for (const [k, v] of Object.entries(data)) {
+            formData.append(k, v);
+        }
+        const res = await this.executeWithRetry("POST", url, {
+            method: "POST",
+            headers: this.authHeaders(),
+            body: formData,
+        }, path);
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(`POST ${path} failed (${res.status}): ${text}`);
+        }
+        const prefix = `${this.baseUrl}${path.split("/").slice(0, -1).join("/")}`;
+        this.cache.invalidatePrefix(prefix);
+        return (await res.json()) as ApiResponse;
+    }
+
     async delete (
         path: string,
         params?: Record<string, string>

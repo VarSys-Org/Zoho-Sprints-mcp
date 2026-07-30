@@ -10,7 +10,8 @@ const REQUIRED_PARAMS: Record<string, string[]> = {
     list: ["projectId"],
     add_item_log: ["projectId", "sprintId", "itemId", "users", "date", "duration"],
     add_general: ["projectId", "sprintId", "users", "date", "duration"],
-    delete: ["projectId", "sprintId"],
+    get_details: ["projectId", "logId"],
+    delete: ["projectId", "logId"],
 };
 
 // ─── Action Registry ──────────────────────────────────────────────────────────
@@ -19,6 +20,7 @@ const ACTION_NAMES = [
     "list",
     "add_item_log",
     "add_general",
+    "get_details",
     "delete",
 ] as const;
 
@@ -57,21 +59,24 @@ const ACTION_HANDLERS: Record<string, ActionHandler> = {
         );
     },
 
-    delete: (client, teamId, p) =>
-        client.post(`/team/${teamId}/projects/${p.projectId}/timesheet/`, {
-            action: "delete",
-            logidarr: p.logidarr!,
+    get_details: (client, teamId, p) =>
+        client.get(`/team/${teamId}/projects/${p.projectId}/timesheet/${p.logId!}/`, {
+            action: "logdetails",
         }),
+
+    delete: (client, teamId, p) =>
+        client.delete(`/team/${teamId}/projects/${p.projectId}/timesheet/${p.logId!}/`),
 };
 
 // ─── Tool Description ─────────────────────────────────────────────────────────
 
-const TOOL_DESCRIPTION = `Manage timesheets: list, add item/general log hours, and delete logs.
+const TOOL_DESCRIPTION = `Manage timesheets: list, add item/general log hours, get details, and delete logs.
 Operations:
   list         - List log hours for a project (projectId, index, range)
   add_item_log - Log hours against a work item (projectId, sprintId, itemId, users, date, duration, notes?, billstatus?)
   add_general  - Log general hours (not item-specific) (projectId, sprintId, users, date, duration, notes?, billstatus?)
-  delete       - Delete log entries (projectId, sprintId, logidarr)`;
+  get_details  - Get a single timesheet log details (projectId, logId)
+  delete       - Delete a timesheet log (projectId, logId)`;
 
 // ─── Registration ─────────────────────────────────────────────────────────────
 
@@ -95,7 +100,7 @@ export function registerTimesheetTools (
                 duration: z.string().optional().describe("Duration in hh:mm format (add_item_log, add_general)"),
                 billstatus: z.string().optional().describe("Billable=1, Non-billable=0 (add_item_log, add_general)"),
                 notes: z.string().optional().describe("Description about the time log (add_item_log, add_general)"),
-                logidarr: z.string().optional().describe("JSONArray of log hour IDs to delete (delete)"),
+                logId: z.string().optional().describe("Timesheet log ID (get_details, delete)"),
             },
         },
         async (params) => {

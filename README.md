@@ -12,7 +12,7 @@ A Model Context Protocol (MCP) server that lets AI assistants like Claude, ChatG
 
 ## Features
 
-- **15 Tools** with **127 operations** covering the entire Zoho Sprints API
+- **15 Tools** with **128 operations** covering the entire Zoho Sprints API
 - **Timesheet operations work** (list, log hours, delete) -- fixed in this fork
 - **3 MCP Prompts**: Guided workflows for sprint planning, project summaries, and daily standups
 - **4 MCP Resources**: Health Check, Config, Projects List, Team Members
@@ -34,7 +34,8 @@ This fork fixes all 4 operations (confirmed by capturing Zoho Sprints web UI net
 | list | `GET /logs/?action=data` | `GET /timesheet/?action=listview` |
 | add_item_log | `POST /item/{id}/logs/` (form-urlencoded) | `POST /item/{id}/timesheet/?action=additemlog` (multipart) |
 | add_general | `POST /generallog/` | `POST /timesheet/?action=addgenerallog` |
-| delete | `POST /sprints/{id}/logs/` | `POST /timesheet/` |
+| get_details | Not available | `GET /timesheet/{logId}/?action=logdetails` |
+| delete | `POST /sprints/{id}/logs/` with `logidarr` | `DELETE /timesheet/{logId}/` |
 
 Fixed field names: `hours` -> `duration`, `logdate` -> `date`, `billstatus` -> `isbillable`, `users` (JSON array) -> `users` (single ZPUID string).
 
@@ -151,14 +152,15 @@ Then in ChatGPT -> Settings -> Developer -> Apps -> Add MCP Server with URL `htt
 
 Each tool is a single MCP tool with an `operation` parameter that selects the action.
 
-### `manage_timesheets` (4 operations) -- FIXED
+### `manage_timesheets` (5 operations) -- FIXED
 
 | Operation | Description | Parameters |
 |---|---|---|
 | `list` | Fetch time logs for a project | projectId, index, range |
 | `add_item_log` | Log hours against a work item | projectId, sprintId, itemId, users, date, duration, notes?, billstatus? |
 | `add_general` | Log general hours (not item-specific) | projectId, sprintId, users, date, duration, notes?, billstatus? |
-| `delete` | Delete time log entries | projectId, sprintId, logidarr |
+| `get_details` | Get a single timesheet log details | projectId, logId |
+| `delete` | Delete a timesheet log by ID | projectId, logId |
 
 **Note:** `date` must be in ISO format (e.g., `2026-07-30T00:00:00+05:30`), `duration` in `hh:mm` format, `users` is a single ZPUID string (not JSON array).
 

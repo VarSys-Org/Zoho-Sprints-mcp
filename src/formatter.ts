@@ -1,5 +1,8 @@
 import type { ApiResponse } from "./types.js";
 
+/** Max characters before we summarize a list response */
+const MAX_RESPONSE_CHARS = 8000;
+
 /**
  * Format a raw Zoho Sprints API response into a concise, LLM-friendly summary.
  * Falls back to JSON.stringify for unknown shapes.
@@ -7,7 +10,7 @@ import type { ApiResponse } from "./types.js";
 export function formatResponse (result: ApiResponse, context?: string): string {
     // If the response contains an error key, surface it prominently
     if (result.error) {
-        return `❌ Error: ${JSON.stringify(result.error)}\n\n${JSON.stringify(result, null, 2)}`;
+        return `Error: ${JSON.stringify(result.error)}\n\n${JSON.stringify(result, null, 2)}`;
     }
 
     const parts: string[] = [];
@@ -28,8 +31,13 @@ export function formatResponse (result: ApiResponse, context?: string): string {
         parts.push(pageInfo);
     }
 
-    // Pretty-print the payload
-    parts.push(JSON.stringify(result, null, 2));
+    // For large list responses, summarize instead of dumping raw JSON
+    const fullJson = JSON.stringify(result, null, 2);
+    if (fullJson.length > MAX_RESPONSE_CHARS) {
+        parts.push(summarizeLargeResponse(result));
+    } else {
+        parts.push(fullJson);
+    }
 
     return parts.join("\n");
 }
@@ -50,6 +58,91 @@ function extractPaginationInfo (result: ApiResponse): string | null {
     }
 
     return null;
+}
+
+/**
+ * Summarize a large response by extracting key fields from array items.
+ * Detects common Zoho response shapes and picks relevant fields.
+ */
+function summarizeLargeResponse (result: ApiResponse): string {
+    // Find the first array in the response (usually the main data)
+    const arrays: Array<{ key: string; items: unknown[] }> = [];
+    for (const [key, value] of Object.entries(result)) {
+        if (Array.isArray(value) && value.length > 0) {
+            arrays.push({ key, items: value });
+        }
+    }
+
+    if (arrays.length === 0) {
+        // No arrays found, just truncate the JSON
+        const json = JSON.stringify(result, null, 2);
+        return json.slice(0, MAX_RESPONSE_CHARS) + "\n... (truncated)";
+    }
+
+    const lines: string[] = [];
+
+    for (const { key, items } of arrays) {
+        lines.push(`\n[${key}] ${items.length} items:`);
+
+        // Pick fields based on what's in the first item
+        const firstItem = items[0] as Record<string, unknown>;
+        const fields = pickSummaryFields(firstItem);
+
+        const display = items.slice(0, 20);
+        for (let i = 0; i < display.length; i++) {
+            const item = display[i] as Record<string, unknown>;
+            const values = fields
+                .map(f => {
+                    const v = item[f];
+                    return v !== undefined && v !== null ? `${f}: ${v}` : null;
+                })
+                .filter(Boolean)
+                .join(", ");
+            lines.push(`  ${i + 1}. ${values}`);
+        }
+
+        if (items.length > 20) {
+            lines.push(`  ... and ${items.length - 20} more`);
+        }
+    }
+
+    return lines.join("\n");
+}
+
+/**
+ * Pick the most useful fields to display from an object.
+ * Prioritizes common Zoho Sprints fields.
+ */
+function pickSummaryFields (item: Record<string, unknown>): string[] {
+    const priorityFields = [
+        "id", "name", "itemName", "title", "status", "statusName",
+        "priority", "priorityName", "owner", "ownerName", "assignee",
+        "point", "startdate", "enddate", "dueDate", "itemNo",
+        "sprintName", "projectName", "epicName", "typeName",
+    ];
+
+    const itemKeys = Object.keys(item);
+    const picked: string[] = [];
+
+    // First, grab priority fields that exist
+    for (const f of priorityFields) {
+        if (itemKeys.includes(f) && picked.length < 6) {
+            picked.push(f);
+        }
+    }
+
+    // If we have room, add more fields
+    for (const k of itemKeys) {
+        if (!picked.includes(k) && picked.length < 8) {
+            // Skip long/complex fields
+            const val = item[k];
+            if (typeof val === "string" && val.length > 100) continue;
+            if (typeof val === "object" && val !== null) continue;
+            picked.push(k);
+        }
+    }
+
+    return picked;
 }
 
 /**

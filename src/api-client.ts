@@ -189,22 +189,22 @@ export class ZohoSprintsClient {
             return this.executeWithRetry(method, url, options, path, attempt + 1);
         }
 
-        // // Zoho auth failure – code 7700 / "Authentication failed" (may arrive as any HTTP status)
-        // if (attempt === 0) {
-        //     const cloned = res.clone();
-        //     try {
-        //         const body = await cloned.json() as { code?: number; message?: string };
-        //         if (body.code === 7700 && body.message === "Authentication failed") {
-        //             logger.debug("Zoho auth failure (code 7700) received, refreshing token and retrying...");
-        //             await this.refreshAccessToken();
-        //             const headers = options.headers as Record<string, string>;
-        //             headers.Authorization = `Zoho-oauthtoken ${this.accessToken}`;
-        //             return this.executeWithRetry(method, url, options, path, attempt + 1);
-        //         }
-        //     } catch {
-        //         // Not JSON or parse error – fall through to normal handling
-        //     }
-        // }
+        // Zoho auth failure – code 7700 / "Authentication failed" (may arrive as any HTTP status)
+        if (attempt === 0) {
+            const cloned = res.clone();
+            try {
+                const body = await cloned.json() as { code?: number; message?: string };
+                if (body.code === 7700 && body.message === "Authentication failed") {
+                    logger.debug("Zoho auth failure (code 7700) received, refreshing token and retrying...");
+                    await this.refreshAccessToken();
+                    const headers = options.headers as Record<string, string>;
+                    headers.Authorization = `Zoho-oauthtoken ${this.accessToken}`;
+                    return this.executeWithRetry(method, url, options, path, attempt + 1);
+                }
+            } catch {
+                // Not JSON or parse error – fall through to normal handling
+            }
+        }
 
         // Rate limited by Zoho – wait and retry (if budget allows)
         if (res.status === 429 && attempt < MAX_RETRIES && this.retryBudget.tryConsume()) {
@@ -293,6 +293,42 @@ export class ZohoSprintsClient {
         if (!res.ok) {
             const text = await res.text();
             throw new Error(`POST ${path} failed (${res.status}): ${text}`);
+        }
+
+        // Invalidate cache for this path's prefix (write operations)
+        const prefix = `${this.baseUrl}${path.split("/").slice(0, -1).join("/")}`;
+        this.cache.invalidatePrefix(prefix);
+
+        return (await res.json()) as ApiResponse;
+    }
+
+    async put (
+        path: string,
+        data?: Record<string, string>,
+        jsonBody?: unknown
+    ): Promise<ApiResponse> {
+        const url = `${this.baseUrl}${path}`;
+
+        const headers: Record<string, string> = { ...this.authHeaders() };
+        let body: string | undefined;
+
+        if (jsonBody !== undefined) {
+            headers["Content-Type"] = "application/json";
+            body = JSON.stringify(jsonBody);
+        } else if (data) {
+            headers["Content-Type"] = "application/x-www-form-urlencoded";
+            body = new URLSearchParams(data).toString();
+        }
+
+        const res = await this.executeWithRetry("PUT", url, {
+            method: "PUT",
+            headers,
+            body,
+        }, path);
+
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(`PUT ${path} failed (${res.status}): ${text}`);
         }
 
         // Invalidate cache for this path's prefix (write operations)

@@ -18,6 +18,7 @@ const REQUIRED_PARAMS: Record<string, string[]> = {
     delete: ["projectId", "sprintId", "itemId"],
     get_comments: ["projectId", "moduleId", "itemId"],
     add_comment: ["projectId", "moduleId", "itemId", "name"],
+    edit_comment: ["projectId", "moduleId", "itemId", "notesId", "name"],
     delete_comment: ["projectId", "moduleId", "itemId", "notesId"],
     get_linked: ["projectId", "sprintId", "itemId"],
     link: ["projectId", "sprintId", "itemId", "linkitemobj", "linktosprintid", "linktoprojectid", "linktypeid"],
@@ -28,7 +29,6 @@ const REQUIRED_PARAMS: Record<string, string[]> = {
     update_followers: ["projectId", "sprintId", "itemId"],
     get_timer: ["projectId", "sprintId"],
     get_item_count: ["projectId", "sprintId"],
-    // get_item_count_by_sprint: ["projectId"],
 };
 
 // ─── Action Registry ──────────────────────────────────────────────────────────
@@ -45,6 +45,7 @@ const ACTION_NAMES = [
     "delete",
     "get_comments",
     "add_comment",
+    "edit_comment",
     "delete_comment",
     "get_linked",
     "link",
@@ -55,7 +56,6 @@ const ACTION_NAMES = [
     "update_followers",
     "get_timer",
     "get_item_count",
-    // "get_item_count_by_sprint",
 ] as const;
 
 const ACTION_HANDLERS: Record<string, ActionHandler> = {
@@ -163,6 +163,12 @@ const ACTION_HANDLERS: Record<string, ActionHandler> = {
         client.post(
             `/team/${teamId}/projects/${p.projectId}/modules/${p.moduleId}/entity/${p.itemId}/notes/`,
             { action: "addnotes", name: p.name! },
+        ),
+
+    edit_comment: (client, teamId, p) =>
+        client.post(
+            `/team/${teamId}/projects/${p.projectId}/modules/${p.moduleId}/entity/${p.itemId}/notes/${p.notesId}/`,
+            { action: "editnotes", name: p.name! },
         ),
 
     delete_comment: (client, teamId, p) =>
@@ -298,6 +304,7 @@ Operations:
   delete            - Delete item (projectId, sprintId, itemId)
   get_comments      - List item comments (projectId, moduleId, itemId, index, range)
   add_comment       - Add comment (projectId, moduleId, itemId, name)
+  edit_comment      - Edit existing comment (projectId, moduleId, itemId, notesId, name)
   delete_comment    - Delete comment (projectId, moduleId, itemId, notesId)
   get_linked        - Get linked items (projectId, sprintId, itemId)
   link              - Link items (projectId, sprintId, itemId, linkitemobj, linktosprintid, linktoprojectid, linktypeid)
@@ -329,7 +336,7 @@ export function registerItemTools (
                 ...P.notesId,
                 ...P.pagination(),
                 // Create / Update fields
-                name: z.string().optional().describe("Item name or comment text (create, create_subitem, update, add_comment)"),
+                name: z.string().optional().describe("Item name or comment text (create, create_subitem, update, add_comment, edit_comment)"),
                 projitemtypeid: z.string().optional().describe("Item type ID (create, create_subitem, update)"),
                 projpriorityid: z.string().optional().describe("Priority ID (create, create_subitem, update)"),
                 description: z.string().optional().describe("Item description (create, create_subitem, update)"),

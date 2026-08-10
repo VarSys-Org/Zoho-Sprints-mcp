@@ -29,6 +29,13 @@ const REQUIRED_PARAMS: Record<string, string[]> = {
     update_followers: ["projectId", "sprintId", "itemId"],
     get_timer: ["projectId", "sprintId"],
     get_item_count: ["projectId", "sprintId"],
+    // Subitem operations
+    list_subitems: ["projectId", "sprintId", "itemId"],
+    update_subitem: ["projectId", "sprintId", "itemId", "subitemId"],
+    delete_subitem: ["projectId", "sprintId", "itemId", "subitemId"],
+    // Attachment operations
+    list_attachments: ["projectId", "sprintId", "itemId"],
+    delete_attachment: ["projectId", "sprintId", "itemId", "attachmentId"],
 };
 
 // ─── Action Registry ──────────────────────────────────────────────────────────
@@ -56,6 +63,13 @@ const ACTION_NAMES = [
     "update_followers",
     "get_timer",
     "get_item_count",
+    // Subitem operations
+    "list_subitems",
+    "update_subitem",
+    "delete_subitem",
+    // Attachment operations
+    "list_attachments",
+    "delete_attachment",
 ] as const;
 
 const ACTION_HANDLERS: Record<string, ActionHandler> = {
@@ -273,25 +287,47 @@ const ACTION_HANDLERS: Record<string, ActionHandler> = {
         );
     },
 
-    // ─── Item Count by Sprint ────────────────────────────────────────────────
+    // ─── Subitem Operations ─────────────────────────────────────────────────
 
-    // get_item_count_by_sprint: (client, teamId, p) => {
-    //     const params: Record<string, string> = {
-    //         groupby: "9"
-    //     };
-    //     if (p.searchby) params.searchby = p.searchby;
-    //     if (p.searchvalue) params.searchvalue = p.searchvalue;
-    //     if (p.filter) params.filter = p.filter;
-    //     return client.get(
-    //         `/team/${teamId}/projects/${p.projectId}/action/itemcount/`,
-    //         params,
-    //     );
-    // },
+    list_subitems: (client, teamId, p) =>
+        client.get(
+            `/team/${teamId}/projects/${p.projectId}/sprints/${p.sprintId}/item/${p.itemId}/subitem/`,
+            { action: "data", index: p.index ?? "1", range: p.range ?? "50" },
+        ),
+
+    update_subitem: (client, teamId, p) => {
+        const data: Record<string, string> = pick(p, [
+            "name", "description", "projitemtypeid", "projpriorityid",
+            "statusid", "point", "startdate", "enddate",
+        ]);
+        return client.post(
+            `/team/${teamId}/projects/${p.projectId}/sprints/${p.sprintId}/item/${p.itemId}/subitem/${p.subitemId}/`,
+            data,
+        );
+    },
+
+    delete_subitem: (client, teamId, p) =>
+        client.delete(
+            `/team/${teamId}/projects/${p.projectId}/sprints/${p.sprintId}/item/${p.itemId}/subitem/${p.subitemId}/`,
+        ),
+
+    // ─── Attachment Operations ──────────────────────────────────────────────
+
+    list_attachments: (client, teamId, p) =>
+        client.get(
+            `/team/${teamId}/projects/${p.projectId}/sprints/${p.sprintId}/item/${p.itemId}/attachment/`,
+            { action: "data", index: p.index ?? "1", range: p.range ?? "50" },
+        ),
+
+    delete_attachment: (client, teamId, p) =>
+        client.delete(
+            `/team/${teamId}/projects/${p.projectId}/sprints/${p.sprintId}/item/${p.itemId}/attachment/${p.attachmentId}/`,
+        ),
 };
 
 // ─── Tool Description ─────────────────────────────────────────────────────────
 
-const TOOL_DESCRIPTION = `Manage work items: CRUD, comments, links, tags, followers, and timers.
+const TOOL_DESCRIPTION = `Manage work items: CRUD, comments, links, tags, followers, subitems, attachments, and timers.
 Operations:
   list              - List items in a sprint/backlog (projectId, sprintId, index, range, subitem?, searchby?, searchvalue?, filter?)
   get_details       - Get item details (projectId, sprintId, itemId)
@@ -314,7 +350,12 @@ Operations:
   get_followers     - Get item followers (projectId, sprintId, itemId)
   update_followers  - Update followers (projectId, sprintId, itemId, newusers?, delusers?)
   get_timer         - Get item timer (projectId, sprintId, itemIdArr?)
-  get_item_count    - Get item count in a sprint/backlog (projectId, sprintId, searchby?, searchvalue?, filter?)`;
+  get_item_count    - Get item count in a sprint/backlog (projectId, sprintId, searchby?, searchvalue?, filter?)
+  list_subitems     - List subitems of an item (projectId, sprintId, itemId, index, range)
+  update_subitem    - Update a subitem (projectId, sprintId, itemId, subitemId, name?, description?, projitemtypeid?, projpriorityid?, statusid?, point?, startdate?, enddate?)
+  delete_subitem    - Delete a subitem (projectId, sprintId, itemId, subitemId)
+  list_attachments  - List attachments on an item (projectId, sprintId, itemId, index, range)
+  delete_attachment - Delete an attachment (projectId, sprintId, itemId, attachmentId)`;
 //   get_item_count_by_sprint - Get item count grouped by all active sprints (projectId, searchby?, searchvalue?, filter?)`;
 
 // ─── Registration ─────────────────────────────────────────────────────────────
@@ -336,16 +377,16 @@ export function registerItemTools (
                 ...P.notesId,
                 ...P.pagination(),
                 // Create / Update fields
-                name: z.string().optional().describe("Item name or comment text (create, create_subitem, update, add_comment, edit_comment)"),
-                projitemtypeid: z.string().optional().describe("Item type ID (create, create_subitem, update)"),
-                projpriorityid: z.string().optional().describe("Priority ID (create, create_subitem, update)"),
-                description: z.string().optional().describe("Item description (create, create_subitem, update)"),
-                statusid: z.string().optional().describe("Status ID (create, update)"),
+                name: z.string().optional().describe("Item name or comment text (create, create_subitem, update, add_comment, edit_comment, update_subitem)"),
+                projitemtypeid: z.string().optional().describe("Item type ID (create, create_subitem, update, update_subitem)"),
+                projpriorityid: z.string().optional().describe("Priority ID (create, create_subitem, update, update_subitem)"),
+                description: z.string().optional().describe("Item description (create, create_subitem, update, update_subitem)"),
+                statusid: z.string().optional().describe("Status ID (create, update, update_subitem)"),
                 epicid: z.string().optional().describe("Epic ID (create, create_subitem, update)"),
                 users: z.string().optional().describe("JSONArray of user IDs (create, create_subitem)"),
-                point: z.string().optional().describe("Story points index (create, create_subitem, update)"),
-                startdate: z.string().optional().describe("Start date ISO (create, create_subitem, update)"),
-                enddate: z.string().optional().describe("End date ISO (create, create_subitem, update)"),
+                point: z.string().optional().describe("Story points index (create, create_subitem, update, update_subitem)"),
+                startdate: z.string().optional().describe("Start date ISO (create, create_subitem, update, update_subitem)"),
+                enddate: z.string().optional().describe("End date ISO (create, create_subitem, update, update_subitem)"),
                 duration: z.string().optional().describe("Duration (create, create_subitem)"),
                 chkdependent: z.string().optional().describe("'false' to skip linked-item status check (update)"),
                 newusers: z.string().optional().describe("JSONArray of user IDs to add (update, update_followers)"),
@@ -373,6 +414,10 @@ export function registerItemTools (
                 reassociate: z.string().optional().describe("'true' to replace, 'false' to append (update_tags)"),
                 // Timer fields
                 itemIdArr: z.string().optional().describe("JSONArray of item IDs (get_timer)"),
+                // Subitem fields
+                subitemId: z.string().optional().describe("Subitem ID (update_subitem, delete_subitem)"),
+                // Attachment fields
+                attachmentId: z.string().optional().describe("Attachment ID (delete_attachment)"),
             },
         },
         async (params) => {

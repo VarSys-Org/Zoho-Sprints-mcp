@@ -3,6 +3,7 @@ import { P } from "../schemas.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ZohoSprintsClient } from "../api-client.js";
 import { ActionParams, ActionHandler, validateRequired, toolResult, toolError } from "./tool-utils.js";
+import { markdownToHtml } from "../formatter.js";
 
 // ─── Required Params per Operation ────────────────────────────────────────────
 
@@ -55,7 +56,7 @@ const ACTION_HANDLERS: Record<string, ActionHandler> = {
 
     create: (client, teamId, p) => {
         const body: Record<string, unknown> = { name: p.name!, owner: p.owner! };
-        if (p.desc) body.desc = p.desc;
+        if (p.desc) body.desc = markdownToHtml(p.desc);
         if (p.color) body.color = p.color;
         return client.post(
             `/team/${teamId}/projects/${p.projectId}/epic/`,
@@ -74,7 +75,7 @@ const ACTION_HANDLERS: Record<string, ActionHandler> = {
         const body: Record<string, unknown> = {};
         if (p.name) body.name = p.name;
         if (p.owner) body.owner = p.owner;
-        if (p.desc) body.desc = p.desc;
+        if (p.desc) body.desc = markdownToHtml(p.desc);
         if (p.type) body.type = parseInt(p.type);
         if (p.color) body.color = p.color;
         return client.post(

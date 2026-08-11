@@ -3,45 +3,7 @@ import { P } from "../schemas.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ZohoSprintsClient } from "../api-client.js";
 import { ActionParams, ActionHandler, pick, validateRequired, toolResult, toolError } from "./tool-utils.js";
-
-// ─── Markdown to HTML converter ──────────────────────────────────────────────
-function markdownToHtml(md: string): string {
-    if (!md) return md;
-    let html = md;
-    // Headers (process ### before ## to avoid double conversion)
-    html = html.replace(/^### (.+)$/gm, (_m, p1) => `<h3>${p1}</h3>`);
-    html = html.replace(/^## (.+)$/gm, (_m, p1) => `<h2>${p1}</h2>`);
-    html = html.replace(/^# (.+)$/gm, (_m, p1) => `<h1>${p1}</h1>`);
-    // Bold
-    html = html.replace(/\*\*(.+?)\*\*/g, (_m, p1) => `<strong>${p1}</strong>`);
-    // Italic
-    html = html.replace(/\*(.+?)\*/g, (_m, p1) => `<em>${p1}</em>`);
-    // Code blocks
-    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_m, _p1, p2) => `<pre><code>${p2}</code></pre>`);
-    // Inline code
-    html = html.replace(/`([^`]+)`/g, (_m, p1) => `<code>${p1}</code>`);
-    // Tables
-    html = html.replace(/^\|(.+)\|\n\|[-| ]+\|\n((?:\|.+\|\n?)*)/gm, (_match, header, body) => {
-        const headers = header.split('|').map((h: string) => `<th>${h.trim()}</th>`).join('');
-        const rows = body.trim().split('\n').map((row: string) => {
-            const cells = row.split('|').map((c: string) => `<td>${c.trim()}</td>`).join('');
-            return `<tr>${cells}</tr>`;
-        }).join('');
-        return `<table><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
-    });
-    // Checkboxes
-    html = html.replace(/^- \[x\] (.+)$/gm, (_m, p1) => `<li><input type="checkbox" checked disabled> ${p1}</li>`);
-    html = html.replace(/^- \[ \] (.+)$/gm, (_m, p1) => `<li><input type="checkbox" disabled> ${p1}</li>`);
-    // Unordered lists
-    html = html.replace(/^- (.+)$/gm, (_m, p1) => `<li>${p1}</li>`);
-    html = html.replace(/(<li>.*<\/li>\n?)+/g, (match) => `<ul>${match}</ul>`);
-    // Ordered lists
-    html = html.replace(/^\d+\. (.+)$/gm, (_m, p1) => `<li>${p1}</li>`);
-    // Line breaks
-    html = html.replace(/\n\n/g, '<br><br>');
-    html = html.replace(/\n/g, '<br>');
-    return html;
-}
+import { markdownToHtml } from "../formatter.js";
 
 // ─── Required Params per Operation ────────────────────────────────────────────
 
@@ -75,6 +37,9 @@ const REQUIRED_PARAMS: Record<string, string[]> = {
     // Attachment operations
     list_attachments: ["projectId", "sprintId", "itemId"],
     delete_attachment: ["projectId", "sprintId", "itemId", "attachmentId"],
+    // Block / Unblock operations
+    block_item: ["projectId", "sprintId", "itemId"],
+    unblock_item: ["projectId", "sprintId", "itemId"],
 };
 
 // ─── Action Registry ──────────────────────────────────────────────────────────
@@ -109,6 +74,9 @@ const ACTION_NAMES = [
     // Attachment operations
     "list_attachments",
     "delete_attachment",
+    // Block / Unblock operations
+    "block_item",
+    "unblock_item",
 ] as const;
 
 const ACTION_HANDLERS: Record<string, ActionHandler> = {
@@ -218,13 +186,13 @@ const ACTION_HANDLERS: Record<string, ActionHandler> = {
     add_comment: (client, teamId, p) =>
         client.post(
             `/team/${teamId}/projects/${p.projectId}/modules/${p.moduleId}/entity/${p.itemId}/notes/`,
-            { action: "addnotes", name: p.name! },
+            { action: "addnotes", name: markdownToHtml(p.name!) },
         ),
 
     edit_comment: (client, teamId, p) =>
         client.post(
             `/team/${teamId}/projects/${p.projectId}/modules/${p.moduleId}/entity/${p.itemId}/notes/${p.notesId}/`,
-            { action: "editnotes", name: p.name! },
+            { action: "editnotes", name: markdownToHtml(p.name!) },
         ),
 
     delete_comment: (client, teamId, p) =>
@@ -355,6 +323,8 @@ const ACTION_HANDLERS: Record<string, ActionHandler> = {
 
     // ─── Attachment Operations ──────────────────────────────────────────────
 
+    // ─── Attachment Operations ──────────────────────────────────────────────
+
     list_attachments: (client, teamId, p) =>
         client.get(
             `/team/${teamId}/projects/${p.projectId}/sprints/${p.sprintId}/item/${p.itemId}/attachment/`,
@@ -365,11 +335,28 @@ const ACTION_HANDLERS: Record<string, ActionHandler> = {
         client.delete(
             `/team/${teamId}/projects/${p.projectId}/sprints/${p.sprintId}/item/${p.itemId}/attachment/${p.attachmentId}/`,
         ),
+
+    // ─── Block / Unblock Operations ─────────────────────────────────────────
+
+    block_item: (client, teamId, p) => {
+        const data: Record<string, string> = { action: "blockitem" };
+        if (p.reason) data.blockreason = p.reason;
+        return client.post(
+            `/team/${teamId}/projects/${p.projectId}/sprints/${p.sprintId}/item/${p.itemId}/`,
+            data,
+        );
+    },
+
+    unblock_item: (client, teamId, p) =>
+        client.post(
+            `/team/${teamId}/projects/${p.projectId}/sprints/${p.sprintId}/item/${p.itemId}/`,
+            { action: "unblockitem" },
+        ),
 };
 
 // ─── Tool Description ─────────────────────────────────────────────────────────
 
-const TOOL_DESCRIPTION = `Manage work items: CRUD, comments, links, tags, followers, subitems, attachments, and timers.
+const TOOL_DESCRIPTION = `Manage work items: CRUD, comments, links, tags, followers, subitems, attachments, timers, and blocking/unblocking.
 Operations:
   list              - List items in a sprint/backlog (projectId, sprintId, index, range, subitem?, searchby?, searchvalue?, filter?)
   get_details       - Get item details (projectId, sprintId, itemId)
@@ -397,8 +384,9 @@ Operations:
   update_subitem    - Update a subitem (projectId, sprintId, itemId, subitemId, name?, description?, projitemtypeid?, projpriorityid?, statusid?, point?, startdate?, enddate?)
   delete_subitem    - Delete a subitem (projectId, sprintId, itemId, subitemId)
   list_attachments  - List attachments on an item (projectId, sprintId, itemId, index, range)
-  delete_attachment - Delete an attachment (projectId, sprintId, itemId, attachmentId)`;
-//   get_item_count_by_sprint - Get item count grouped by all active sprints (projectId, searchby?, searchvalue?, filter?)`;
+  delete_attachment - Delete an attachment (projectId, sprintId, itemId, attachmentId)
+  block_item        - Block an item with a reason (projectId, sprintId, itemId, reason?)
+  unblock_item      - Unblock a blocked item (projectId, sprintId, itemId)`;
 
 // ─── Registration ─────────────────────────────────────────────────────────────
 
@@ -460,6 +448,8 @@ export function registerItemTools (
                 subitemId: z.string().optional().describe("Subitem ID (update_subitem, delete_subitem)"),
                 // Attachment fields
                 attachmentId: z.string().optional().describe("Attachment ID (delete_attachment)"),
+                // Block fields
+                reason: z.string().optional().describe("Block reason message (block_item)"),
             },
         },
         async (params) => {

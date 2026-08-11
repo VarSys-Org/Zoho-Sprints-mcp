@@ -174,3 +174,60 @@ export function summarizeList (
 
     return lines.join("\n");
 }
+
+/**
+ * Convert Markdown formatted text into Zoho Sprints compatible HTML.
+ */
+export function markdownToHtml(md: string): string {
+    if (!md) return md;
+    let html = md;
+
+    // 1. Unescape literal escaped newlines if passed as a string "\\n"
+    html = html.replace(/\\n/g, "\n");
+
+    // 2. Normalize missing newlines before headers if glued to text (e.g., "layers.### Problem")
+    html = html.replace(/([^\n])\s*(#{1,6}\s+)/g, "$1\n\n$2");
+
+    // 3. Normalize missing newlines around Markdown table boundaries (e.g., "Files| File | Issue |")
+    html = html.replace(/([^\n])\s*(\|[^\n]+\|)/g, "$1\n$2");
+    html = html.replace(/(\|[^\n]+\|)\s*([^\n|#\s])/g, "$1\n$2");
+
+    // 4. Code blocks
+    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_m, _p1, p2) => `<pre><code>${p2}</code></pre>`);
+
+    // 5. Headers (process ####, ###, ##, # in order)
+    html = html.replace(/^#### (.+)$/gm, (_m, p1) => `<h4>${p1}</h4>`);
+    html = html.replace(/^### (.+)$/gm, (_m, p1) => `<h3>${p1}</h3>`);
+    html = html.replace(/^## (.+)$/gm, (_m, p1) => `<h2>${p1}</h2>`);
+    html = html.replace(/^# (.+)$/gm, (_m, p1) => `<h1>${p1}</h1>`);
+
+    // 6. Bold & Italics & Inline Code
+    html = html.replace(/\*\*(.+?)\*\*/g, (_m, p1) => `<strong>${p1}</strong>`);
+    html = html.replace(/\*(.+?)\*/g, (_m, p1) => `<em>${p1}</em>`);
+    html = html.replace(/`([^`]+)`/g, (_m, p1) => `<code>${p1}</code>`);
+
+    // 7. Tables
+    html = html.replace(/^\|(.+)\|\n\|[-| ]+\|\n((?:\|.+\|\n?)*)/gm, (_match, header, body) => {
+        const headers = header.split('|').map((h: string) => `<th>${h.trim()}</th>`).join('');
+        const rows = body.trim().split('\n').map((row: string) => {
+            const cells = row.split('|').map((c: string) => `<td>${c.trim()}</td>`).join('');
+            return `<tr>${cells}</tr>`;
+        }).join('');
+        return `<table><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
+    });
+
+    // 8. Checkboxes
+    html = html.replace(/^- \[x\] (.+)$/gm, (_m, p1) => `<li><input type="checkbox" checked disabled> ${p1}</li>`);
+    html = html.replace(/^- \[ \] (.+)$/gm, (_m, p1) => `<li><input type="checkbox" disabled> ${p1}</li>`);
+
+    // 9. Lists
+    html = html.replace(/^- (.+)$/gm, (_m, p1) => `<li>${p1}</li>`);
+    html = html.replace(/(<li>.*<\/li>\n?)+/g, (match) => `<ul>${match}</ul>`);
+    html = html.replace(/^\d+\. (.+)$/gm, (_m, p1) => `<li>${p1}</li>`);
+
+    // 10. Line breaks
+    html = html.replace(/\n\n/g, '<br><br>');
+    html = html.replace(/\n/g, '<br>');
+
+    return html;
+}

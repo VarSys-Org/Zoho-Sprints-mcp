@@ -4,6 +4,45 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ZohoSprintsClient } from "../api-client.js";
 import { ActionParams, ActionHandler, pick, validateRequired, toolResult, toolError } from "./tool-utils.js";
 
+// ─── Markdown to HTML converter ──────────────────────────────────────────────
+function markdownToHtml(md: string): string {
+    if (!md) return md;
+    let html = md;
+    // Headers (process ### before ## to avoid double conversion)
+    html = html.replace(/^### (.+)$/gm, (_m, p1) => `<h3>${p1}</h3>`);
+    html = html.replace(/^## (.+)$/gm, (_m, p1) => `<h2>${p1}</h2>`);
+    html = html.replace(/^# (.+)$/gm, (_m, p1) => `<h1>${p1}</h1>`);
+    // Bold
+    html = html.replace(/\*\*(.+?)\*\*/g, (_m, p1) => `<strong>${p1}</strong>`);
+    // Italic
+    html = html.replace(/\*(.+?)\*/g, (_m, p1) => `<em>${p1}</em>`);
+    // Code blocks
+    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_m, _p1, p2) => `<pre><code>${p2}</code></pre>`);
+    // Inline code
+    html = html.replace(/`([^`]+)`/g, (_m, p1) => `<code>${p1}</code>`);
+    // Tables
+    html = html.replace(/^\|(.+)\|\n\|[-| ]+\|\n((?:\|.+\|\n?)*)/gm, (_match, header, body) => {
+        const headers = header.split('|').map((h: string) => `<th>${h.trim()}</th>`).join('');
+        const rows = body.trim().split('\n').map((row: string) => {
+            const cells = row.split('|').map((c: string) => `<td>${c.trim()}</td>`).join('');
+            return `<tr>${cells}</tr>`;
+        }).join('');
+        return `<table><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
+    });
+    // Checkboxes
+    html = html.replace(/^- \[x\] (.+)$/gm, (_m, p1) => `<li><input type="checkbox" checked disabled> ${p1}</li>`);
+    html = html.replace(/^- \[ \] (.+)$/gm, (_m, p1) => `<li><input type="checkbox" disabled> ${p1}</li>`);
+    // Unordered lists
+    html = html.replace(/^- (.+)$/gm, (_m, p1) => `<li>${p1}</li>`);
+    html = html.replace(/(<li>.*<\/li>\n?)+/g, (match) => `<ul>${match}</ul>`);
+    // Ordered lists
+    html = html.replace(/^\d+\. (.+)$/gm, (_m, p1) => `<li>${p1}</li>`);
+    // Line breaks
+    html = html.replace(/\n\n/g, '<br><br>');
+    html = html.replace(/\n/g, '<br>');
+    return html;
+}
+
 // ─── Required Params per Operation ────────────────────────────────────────────
 
 const REQUIRED_PARAMS: Record<string, string[]> = {
@@ -118,6 +157,7 @@ const ACTION_HANDLERS: Record<string, ActionHandler> = {
             "name", "projitemtypeid", "projpriorityid", "description", "statusid",
             "epicid", "users", "point", "startdate", "enddate", "duration",
         ]);
+        if (data.description) data.description = markdownToHtml(data.description);
         return client.post(
             `/team/${teamId}/projects/${p.projectId}/sprints/${p.sprintId}/item/`,
             data,
@@ -129,6 +169,7 @@ const ACTION_HANDLERS: Record<string, ActionHandler> = {
             "name", "projitemtypeid", "projpriorityid", "description",
             "epicid", "users", "point", "startdate", "enddate", "duration",
         ]);
+        if (data.description) data.description = markdownToHtml(data.description);
         return client.post(
             `/team/${teamId}/projects/${p.projectId}/sprints/${p.sprintId}/item/${p.itemId}/subitem/`,
             data,
@@ -141,6 +182,7 @@ const ACTION_HANDLERS: Record<string, ActionHandler> = {
             "statusid", "chkdependent", "newusers", "delusers", "point",
             "startdate", "enddate",
         ]);
+        if (data.description) data.description = markdownToHtml(data.description);
         return client.post(
             `/team/${teamId}/projects/${p.projectId}/sprints/${p.sprintId}/item/${p.itemId}/`,
             data,

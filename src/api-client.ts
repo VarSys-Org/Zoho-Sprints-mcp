@@ -269,9 +269,15 @@ export class ZohoSprintsClient {
     async post (
         path: string,
         data?: Record<string, string>,
-        jsonBody?: unknown
+        jsonBody?: unknown,
+        params?: Record<string, string>
     ): Promise<ApiResponse> {
-        const url = `${this.baseUrl}${path}`;
+        const url = new URL(`${this.baseUrl}${path}`);
+        if (params) {
+            for (const [k, v] of Object.entries(params)) {
+                url.searchParams.set(k, v);
+            }
+        }
 
         const headers: Record<string, string> = { ...this.authHeaders() };
         let body: string | undefined;
@@ -284,7 +290,7 @@ export class ZohoSprintsClient {
             body = new URLSearchParams(data).toString();
         }
 
-        const res = await this.executeWithRetry("POST", url, {
+        const res = await this.executeWithRetry("POST", url.toString(), {
             method: "POST",
             headers,
             body,
@@ -305,9 +311,15 @@ export class ZohoSprintsClient {
     async put (
         path: string,
         data?: Record<string, string>,
-        jsonBody?: unknown
+        jsonBody?: unknown,
+        params?: Record<string, string>
     ): Promise<ApiResponse> {
-        const url = `${this.baseUrl}${path}`;
+        const url = new URL(`${this.baseUrl}${path}`);
+        if (params) {
+            for (const [k, v] of Object.entries(params)) {
+                url.searchParams.set(k, v);
+            }
+        }
 
         const headers: Record<string, string> = { ...this.authHeaders() };
         let body: string | undefined;
@@ -320,7 +332,7 @@ export class ZohoSprintsClient {
             body = new URLSearchParams(data).toString();
         }
 
-        const res = await this.executeWithRetry("PUT", url, {
+        const res = await this.executeWithRetry("PUT", url.toString(), {
             method: "PUT",
             headers,
             body,

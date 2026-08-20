@@ -128,7 +128,9 @@ const ACTION_HANDLERS: Record<string, ActionHandler> = {
         if (data.description) data.description = markdownToHtml(data.description);
         return client.post(
             `/team/${teamId}/projects/${p.projectId}/sprints/${p.sprintId}/item/`,
-            data,
+            undefined,   // no body
+            undefined,   // no jsonBody
+            data,        // query-string params
         );
     },
 
@@ -140,7 +142,9 @@ const ACTION_HANDLERS: Record<string, ActionHandler> = {
         if (data.description) data.description = markdownToHtml(data.description);
         return client.post(
             `/team/${teamId}/projects/${p.projectId}/sprints/${p.sprintId}/item/${p.itemId}/subitem/`,
-            data,
+            undefined,   // no body
+            undefined,   // no jsonBody
+            data,        // query-string params
         );
     },
 

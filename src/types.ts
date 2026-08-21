@@ -10,6 +10,7 @@ export const ZOHO_DOMAINS: Record<string, string> = {
     "com.cn": "https://sprintsapi.zoho.com.cn/zsapi",
     jp: "https://sprintsapi.zoho.jp/zsapi",
     sa: "https://sprintsapi.zoho.sa/zsapi",
+    ca: "https://sprintsapi.zohocloud.ca/zsapi",
 };
 
 /**
@@ -23,6 +24,7 @@ export const ZOHO_ACCOUNTS_DOMAINS: Record<string, string> = {
     "com.cn": "https://accounts.zoho.com.cn",
     jp: "https://accounts.zoho.jp",
     sa: "https://accounts.zoho.sa",
+    ca: "https://accounts.zohocloud.ca",
 };
 
 export interface ZohoSprintsConfig {

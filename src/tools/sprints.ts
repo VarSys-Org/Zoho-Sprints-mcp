@@ -3,6 +3,7 @@ import { P } from "../schemas.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ZohoSprintsClient } from "../api-client.js";
 import { ActionParams, ActionHandler, pick, validateRequired, toolResult, toolError } from "./tool-utils.js";
+import { markdownToHtml } from "../formatter.js";
 
 // ─── Required Params per Operation ────────────────────────────────────────────
 
@@ -105,7 +106,7 @@ const ACTION_HANDLERS: Record<string, ActionHandler> = {
     add_comment: (client, teamId, p) =>
         client.post(
             `/team/${teamId}/projects/${p.projectId}/modules/${p.moduleId}/entity/${p.sprintId}/notes/`,
-            { action: "addnotes", name: p.name! },
+            { action: "addnotes", name: markdownToHtml(p.name!) },
         ),
 
     delete_comment: (client, teamId, p) =>

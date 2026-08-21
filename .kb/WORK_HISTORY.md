@@ -1,5 +1,26 @@
 # Work History
 
+### [2026-08-21] — Detach Fork + Make Repo Private (local)
+
+**Before:** Repo `CodeCraftsman-Jr/Mcp-Zoho-Sprints` was a public fork of `dineshkanin/zoho-sprints-mcp`. Local git had both `origin` and `upstream` remotes.
+
+**Change:**
+- Made GitHub repo private via Settings → Danger Zone → Change visibility
+- Unlinked fork via GitHub Settings → Danger Zone → Unlink fork
+- Removed `upstream` remote from local git config (`git remote remove upstream`)
+
+**Why:** User requested the repo be made private and detached from the original fork.
+
+**Files Affected:**
+
+| File | Change |
+|---|---|
+| `.git/config` | `upstream` remote removed |
+
+**Outcome:** Repo is now private, fork-independent, and only has `origin` pointing to `https://github.com/CodeCraftsman-Jr/Mcp-Zoho-Sprints.git`.
+
+---
+
 ### [2026-08-21] — Fix All Issues + API Reference Doc Creation (local)
 
 **Before:** 4 known issues (missing CA domain, zod implicit dep, sprint markdown inconsistency, item create query-param style). No API docs in repo.

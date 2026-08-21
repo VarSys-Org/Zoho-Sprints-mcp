@@ -6,6 +6,7 @@
 - `.kb/` knowledge base directory for project tracking (2026-08-21)
 - `docs/zoho-sprints-api-reference.md` — complete offline Zoho Sprints REST API reference (2026-08-21)
 - `zod ^4.3.6` as explicit direct dependency in `package.json` (2026-08-21)
+- `test-e2e-workflow.mjs` & `test-github-markdown.mjs` live testing suites for full CRUD and integration verification (2026-08-21)
 
 ### Changed
 - `items.ts`: `create` and `create_subitem` now send data as form body instead of URL query params (2026-08-21)

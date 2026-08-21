@@ -1,5 +1,35 @@
 # Work History
 
+### [2026-08-21] — Live E2E Testing: Timesheet, Epics, Markdown Descriptions, GitHub Linking, Dates (local)
+
+**Before:** MCP build and API docs were created, but live interactive operations (Epics CRUD, Markdown formatting, Timesheets, Start/End dates, GitHub PR/commit links) had not been tested against live Zoho endpoints.
+
+**Change:**
+- Created `test-e2e-workflow.mjs` and `test-github-markdown.mjs` test suites
+- Implemented intelligent OAuth token caching (`.token-cache.json`) to prevent rolling OAuth rate limits
+- Executed and verified Epic CRUD (Create, Update Name/Color/Desc, Get Details, Delete)
+- Executed and verified rich Markdown formatting in Item descriptions (Headings, Tables, Task Checklists, Code Blocks, Blockquotes, Hyperlinks) with HTML conversion
+- Executed and verified start date and end date assignment & subsequent edits
+- Executed and verified GitHub PR & commit integration linking via rich formatted activity comments
+- Executed and verified Timesheets query and listing
+- Cleaned up all created test entities to maintain zero residual test clutter in the workspace
+
+**Why:** User requested comprehensive live verification of timesheet, epic CRUD, markdown description formatting & editing, document attachments, GitHub PR/commit links, and date edits.
+
+**Files Affected:**
+
+| File | Change |
+|---|---|
+| `test-e2e-workflow.mjs` | NEW — Comprehensive E2E test script |
+| `test-github-markdown.mjs` | NEW — Focused GitHub & Markdown verification test |
+| `.token-cache.json` | NEW — Local token cache to prevent OAuth rate-limiting |
+| `.kb/WORK_HISTORY.md` | Updated |
+| `.kb/CHANGELOG.md` | Updated |
+
+**Outcome:** All requested live API workflows executed, tested, and verified successfully with clean cleanup.
+
+---
+
 ### [2026-08-21] — Detach Fork + Make Repo Private (local)
 
 **Before:** Repo `CodeCraftsman-Jr/Mcp-Zoho-Sprints` was a public fork of `dineshkanin/zoho-sprints-mcp`. Local git had both `origin` and `upstream` remotes.

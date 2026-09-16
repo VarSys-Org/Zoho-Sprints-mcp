@@ -5,14 +5,21 @@
  */
 import { spawn } from "child_process";
 
-const env = {
-    ...process.env,
-    ZOHO_SPRINTS_CLIENT_ID: "1000.M2LZXNTUZDD08PWT71USGS21Z61ZIG",
-    ZOHO_SPRINTS_CLIENT_SECRET: "2c53091c9075bad1f26b1706f50733850a4e8968fe",
-    ZOHO_SPRINTS_REFRESH_TOKEN: "1000.a0acce6fa1c608ed27f31b137cb4d78d.00f07cc4469ff8fd9439716634d80ba4",
-    ZOHO_SPRINTS_DOMAIN: "eu",
-    ZOHO_SPRINTS_TEAM_ID: "20117377103",
-};
+const requiredEnv = [
+    "ZOHO_SPRINTS_CLIENT_ID",
+    "ZOHO_SPRINTS_CLIENT_SECRET",
+    "ZOHO_SPRINTS_REFRESH_TOKEN",
+    "ZOHO_SPRINTS_DOMAIN",
+    "ZOHO_SPRINTS_TEAM_ID",
+];
+
+for (const name of requiredEnv) {
+    if (!process.env[name]) {
+        throw new Error(`Missing required environment variable: ${name}`);
+    }
+}
+
+const env = { ...process.env };
 
 const server = spawn("node", ["dist/index.js"], { env, stdio: ["pipe", "pipe", "pipe"] });
 

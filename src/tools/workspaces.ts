@@ -32,13 +32,13 @@ const ACTION_NAMES = [
 
 const ACTION_HANDLERS: Record<string, ActionHandler> = {
 
-    list: (client, _teamId, _p) =>
+    list: (client) =>
         client.get("/teams/"),
 
-    get_settings: (client, teamId, _p) =>
+    get_settings: (client, teamId) =>
         client.get(`/team/${teamId}/settings/`),
 
-    get_link_types: (client, teamId, _p) =>
+    get_link_types: (client, teamId) =>
         client.get(`/team/${teamId}/linktype/`, { action: "data" }),
 
     get_tags: (client, teamId, p) =>

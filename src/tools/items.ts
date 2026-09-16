@@ -302,7 +302,7 @@ const ACTION_HANDLERS: Record<string, ActionHandler> = {
     list_subitems: (client, teamId, p) =>
         client.get(
             `/team/${teamId}/projects/${p.projectId}/sprints/${p.sprintId}/item/${p.itemId}/subitem/`,
-            { action: "data", index: p.index ?? "1", range: p.range ?? "50" },
+            { action: "data" },
         ),
 
     update_subitem: (client, teamId, p) => {
@@ -327,8 +327,8 @@ const ACTION_HANDLERS: Record<string, ActionHandler> = {
 
     list_attachments: (client, teamId, p) =>
         client.get(
-            `/team/${teamId}/projects/${p.projectId}/sprints/${p.sprintId}/item/${p.itemId}/attachment/`,
-            { action: "data", index: p.index ?? "1", range: p.range ?? "50" },
+            `/team/${teamId}/projects/${p.projectId}/sprints/${p.sprintId}/item/${p.itemId}/attachments/`,
+            { action: "notes", index: p.index ?? "1", range: p.range ?? "50" },
         ),
 
     delete_attachment: (client, teamId, p) =>

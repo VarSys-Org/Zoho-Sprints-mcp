@@ -2,7 +2,7 @@ import { z } from "zod";
 import { P } from "../schemas.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ZohoSprintsClient } from "../api-client.js";
-import { ActionParams, ActionHandler, pick, validateRequired, toolResult, toolError } from "./tool-utils.js";
+import { ActionParams, ActionHandler, validateRequired, toolResult, toolError } from "./tool-utils.js";
 
 // ─── Required Params per Operation ────────────────────────────────────────────
 

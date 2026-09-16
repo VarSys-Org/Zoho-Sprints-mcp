@@ -32,10 +32,10 @@ const ACTION_NAMES = [
 
 const ACTION_HANDLERS: Record<string, ActionHandler> = {
 
-    get_placeholders: (client, teamId, _p) =>
+    get_placeholders: (client, teamId) =>
         client.get(`/team/${teamId}/webhooks/placeholders/`, { action: "data" }),
 
-    get_triggers: (client, teamId, _p) =>
+    get_triggers: (client, teamId) =>
         client.get(`/team/${teamId}/webhooks/triggers/`, { action: "data" }),
 
     list: (client, teamId, p) =>

@@ -42,9 +42,12 @@
         "zod": "^4.3.6"
     },
     "devDependencies": {
+        "@eslint/js": "^10.0.1",
         "@types/node": "^22.15.21",
         "dotenv-cli": "^11.0.0",
-        "typescript": "^5.8.3"
+        "eslint": "^10.10.0",
+        "typescript": "^5.8.3",
+        "typescript-eslint": "^8.70.0"
     },
     "engines": {
         "node": ">=20.0.0",

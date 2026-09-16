@@ -6,7 +6,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { ZohoSprintsClient } from "./api-client.js";
-import { ZohoSprintsConfig, ZOHO_DOMAINS } from "./types.js";
+import { ZohoSprintsConfig, ZOHO_DOMAINS, type ApiResponse } from "./types.js";
 import { logger } from "./logger.js";
 
 // Resource registrations
@@ -101,7 +101,7 @@ async function main () {
         console.error("ZOHO_SPRINTS_TEAM_ID not set – detecting workspace...");
         try {
             const teamsResponse = await client.get("/teams/");
-            const portals = (teamsResponse as any).portals as Array<{ teamId?: string; zsoid?: string; name?: string; team_name?: string }> | undefined;
+            const portals = (teamsResponse as ApiResponse).portals as Array<{ teamId?: string; zsoid?: string; name?: string; team_name?: string }> | undefined;
 
             if (!portals || portals.length === 0) {
                 console.error("Error: No workspaces (portals) found for this account.");

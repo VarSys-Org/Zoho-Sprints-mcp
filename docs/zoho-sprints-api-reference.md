@@ -510,7 +510,7 @@ GET /team/{teamId}/projects/{projectId}/sprints/{sprintId}/timer/?action=itemtim
 ### Subitems
 ```http
 # List subitems
-GET /team/{teamId}/projects/{projectId}/sprints/{sprintId}/item/{itemId}/subitem/?action=data&index=1&range=50
+GET /team/{teamId}/projects/{projectId}/sprints/{sprintId}/item/{itemId}/subitem/?action=data
 
 # Create subitem (same required params as create item)
 POST /team/{teamId}/projects/{projectId}/sprints/{sprintId}/item/{itemId}/subitem/
@@ -527,7 +527,7 @@ DELETE /team/{teamId}/projects/{projectId}/sprints/{sprintId}/item/{itemId}/subi
 ### Attachments
 ```http
 # List attachments
-GET /team/{teamId}/projects/{projectId}/sprints/{sprintId}/item/{itemId}/attachment/?action=data&index=1&range=50
+GET /team/{teamId}/projects/{projectId}/sprints/{sprintId}/item/{itemId}/attachments/?action=notes&index=1&range=50
 
 # Delete attachment
 DELETE /team/{teamId}/projects/{projectId}/sprints/{sprintId}/item/{itemId}/attachment/{attachmentId}/

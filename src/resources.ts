@@ -30,7 +30,7 @@ export function registerResources (
                 "Zoho Sprints MCP server health & diagnostics – token status, " +
                 "rate limiter usage, cache size, uptime, and request metrics.",
         },
-        async (_uri) => {
+        async () => {
             const client = getClient();
             const uptimeMs = Date.now() - startedAt.getTime();
             const uptimeMin = Math.round(uptimeMs / 60_000);
@@ -63,7 +63,7 @@ export function registerResources (
                 "Current Zoho Sprints MCP server configuration – domain, team ID, " +
                 "debug mode, rate limiter settings, retry budget, and cache status.",
         },
-        async (_uri) => {
+        async () => {
             const client = getClient();
 
             const configInfo = {
@@ -109,7 +109,7 @@ export function registerResources (
             description:
                 "List of all projects in the current Zoho Sprints workspace.",
         },
-        async (_uri) => {
+        async () => {
             const client = getClient();
             const teamId = client.teamId!;
             const result = await client.get(
@@ -137,7 +137,7 @@ export function registerResources (
             description:
                 "List of all team members in the current Zoho Sprints workspace.",
         },
-        async (_uri) => {
+        async () => {
             const client = getClient();
             const teamId = client.teamId!;
             const result = await client.get(`/team/${teamId}/members/`);

@@ -24,7 +24,7 @@ const ACTION_NAMES = [
 
 const ACTION_HANDLERS: Record<string, ActionHandler> = {
 
-    get_statuses: (client, teamId, _p) =>
+    get_statuses: (client, teamId) =>
         client.get(`/team/${teamId}/okrsettings/status/`),
 
     list: (client, teamId, p) =>

@@ -299,11 +299,27 @@ const ACTION_HANDLERS: Record<string, ActionHandler> = {
 
     // ─── Subitem Operations ─────────────────────────────────────────────────
 
-    list_subitems: (client, teamId, p) =>
-        client.get(
+    list_subitems: async (client, teamId, p) => {
+        const result = await client.get(
             `/team/${teamId}/projects/${p.projectId}/sprints/${p.sprintId}/item/${p.itemId}/subitem/`,
-            { action: "data" },
-        ),
+            { action: "data", index: p.index ?? "1", range: p.range ?? "50" },
+        );
+
+        // Zoho includes the requested root item in this endpoint's response.
+        // A list_subitems operation must return descendants only, otherwise
+        // callers over-count and may accidentally process the root twice.
+        if (typeof result === "object" && result !== null &&
+            Array.isArray((result as Record<string, unknown>).items)) {
+            const response = result as Record<string, unknown>;
+            return {
+                ...response,
+                items: (response.items as Array<Record<string, unknown>>)
+                    .filter((item) => String(item.itemId ?? "") !== p.itemId),
+            };
+        }
+
+        return result;
+    },
 
     update_subitem: (client, teamId, p) => {
         const data: Record<string, string> = pick(p, [

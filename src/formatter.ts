@@ -31,7 +31,16 @@ export function formatResponse (result: ApiResponse, context?: string): string {
         parts.push(pageInfo);
     }
 
-    // For large list responses, summarize instead of dumping raw JSON
+    // Item trees and attachment listings are used for safe migrations and
+    // audits. Never hide their IDs, parent links, descriptions, or attachment
+    // metadata behind the generic first-20-item summary.
+    const itemTree = formatItemTreeResponse(result);
+    if (itemTree) {
+        parts.push(itemTree);
+        return parts.join("\n");
+    }
+
+    // For other large list responses, summarize instead of dumping raw JSON
     const fullJson = JSON.stringify(result, null, 2);
     if (fullJson.length > MAX_RESPONSE_CHARS) {
         parts.push(summarizeLargeResponse(result));
@@ -40,6 +49,50 @@ export function formatResponse (result: ApiResponse, context?: string): string {
     }
 
     return parts.join("\n");
+}
+
+/**
+ * Preserve the complete actionable fields for item-tree responses.
+ * The previous formatter kept only the first 20 records, which made it
+ * impossible to safely consolidate large requirement trees.
+ */
+function formatItemTreeResponse (result: ApiResponse): string | null {
+    const items = result.items;
+    if (Array.isArray(items) && items.length > 0) {
+        const first = items[0];
+        if (typeof first === "object" && first !== null &&
+            ("itemId" in first || "itemNo" in first || "parentItem" in first)) {
+            const compactItems = items.map((item) => {
+                if (typeof item !== "object" || item === null) return item;
+                const record = item as Record<string, unknown>;
+                return {
+                    itemNo: record.itemNo,
+                    itemId: record.itemId,
+                    parentItem: record.parentItem,
+                    rootItem: record.rootItem,
+                    itemName: record.itemName,
+                    description: record.description ?? "",
+                    isParent: record.isParent ?? false,
+                    projItemTypeId: record.projItemTypeId,
+                    statusId: record.statusId,
+                    statusName: record.statusName,
+                    epicId: record.epicId,
+                    hasCheckList: record.hasCheckList ?? false,
+                    isDocsAdded: record.isDocsAdded ?? false,
+                };
+            });
+            return JSON.stringify({
+                ...result,
+                items: compactItems,
+            }, null, 2);
+        }
+    }
+
+    if (result.itemAttachments && typeof result.itemAttachments === "object") {
+        return JSON.stringify(result, null, 2);
+    }
+
+    return null;
 }
 
 /**

@@ -17,7 +17,7 @@ A Model Context Protocol (MCP) server that lets AI assistants like Claude, ChatG
 | **Auth failure handler commented out** | Code 7700 errors not auto-retried | Uncommented token refresh on code 7700 |
 | **No `put()` HTTP method** | All updates use POST (can overwrite) | Added `put()` for proper partial updates |
 | **No `edit_comment`** | Must delete+recreate to fix typos | Added `edit_comment` operation |
-| **Formatter dumps raw JSON** | Large responses flood context window | Summarizes lists >8KB automatically |
+| **Large item trees are incomplete** | IDs and descriptions beyond the first 20 records were hidden; subitem counts included the root | Preserves complete compact item-tree/attachment records, forwards pagination, and excludes the requested root from `list_subitems` |
 | **Error detection incomplete** | Only catches `{status: "failure"}` | Also catches `{error}` and `{code: 7700}` |
 
 ### Timesheet Fixes

@@ -2,6 +2,16 @@
 
 All notable changes to this fork will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+
+- `list_subitems` now forwards pagination parameters and removes the root item
+  that Zoho incorrectly includes in descendant responses.
+- Large item-tree and attachment responses now preserve every actionable
+  record, including item IDs, parent links, descriptions, and attachment
+  metadata, instead of showing only the first 20 records.
+
 ## [1.0.2] - 2026-08-11
 
 ### Added
